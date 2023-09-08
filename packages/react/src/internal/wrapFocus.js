@@ -23,6 +23,7 @@ function elementOrParentIsFloatingMenu(node, selectorsFloatingMenus = []) {
       `.cds--overflow-menu-options`,
       `.cds--tooltip`,
       '.flatpickr-calendar',
+      '.cds--floating-menu__menu',
       ...selectorsFloatingMenus,
     ];
     return allSelectorsFloatingMenus.some((selector) => node.closest(selector));
