@@ -1,0 +1,26 @@
+@use '../../config' as *;
+@use '../../theme' as *;
+@use '../../utilities/box-shadow' as *;
+
+/// Floating menu styles
+/// @access public
+/// @group dropdown
+@mixin floating-menu {
+  // Floating styles
+  .#{$prefix}--floating-menu__menu {
+    z-index: 10000;
+    display: flex;
+    width: var(--custom-menu-width);
+    flex-direction: column;
+    background-color: $layer-01;
+    @include box-shadow();
+    // transition: transform 0.65s cubic-bezier(0.43, 0.33, 0.14, 1.01) 0s;
+    // @media (prefers-reduced-motion) {
+    //   transition: none;
+    // }
+  }
+
+  .#{$prefix}--floating-menu__menu-item {
+    width: inherit;
+  }
+}
