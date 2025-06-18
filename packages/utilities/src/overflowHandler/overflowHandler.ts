@@ -25,8 +25,21 @@ export function getSize(
   if (!el.offsetParent && getComputedStyle(el).display === 'none') {
     el.style.display = 'inline-block';
   }
-  const size = el.getBoundingClientRect()[dimension];
+  let size = el.getBoundingClientRect()[dimension];
   el.style.display = originalDisplay;
+  const computedStyles = getComputedStyle(el);
+  size =
+    dimension === 'width'
+      ? size +
+        parseInt(computedStyles.paddingLeft) +
+        parseInt(computedStyles.paddingRight) +
+        parseInt(computedStyles.marginLeft) +
+        parseInt(computedStyles.marginRight)
+      : size +
+        parseInt(computedStyles.paddingTop) +
+        parseInt(computedStyles.paddingBottom) +
+        parseInt(computedStyles.marginTop) +
+        parseInt(computedStyles.marginBottom);
   return size;
 }
 
@@ -85,27 +98,31 @@ export function updateOverflowHandler({
   const totalSize = sizes.reduce((sum, size) => sum + size, 0);
   const totalFixedSize = fixedSizes.reduce((sum, size) => sum + size, 0);
 
-  if (totalSize + totalFixedSize <= containerSize) {
+  if (totalSize + totalFixedSize <= containerSize - offsetSize) {
     visibleItems = maxVisibleItems
       ? items.slice(0, maxVisibleItems)
       : [...items];
     hiddenItems = maxVisibleItems ? items.slice(maxVisibleItems) : [];
   } else {
-    const available = containerSize - offsetSize;
+    const available = containerSize - offsetSize - totalFixedSize;
     let accumulated = 0;
+    let breakIndex = items.length;
 
     for (let i = 0; i < items.length; i++) {
       const size = sizes[i];
       if (
+        accumulated + size <= available &&
         accumulated + size + totalFixedSize <= available &&
         (!maxVisibleItems || visibleItems.length < maxVisibleItems)
       ) {
         visibleItems.push(items[i]);
         accumulated += size;
       } else {
-        hiddenItems.push(items[i]);
+        breakIndex = i;
+        break;
       }
     }
+    hiddenItems = items.slice(breakIndex);
   }
 
   if (

@@ -27,7 +27,7 @@ import { MenuItemProps } from '../Menu/MenuItem';
 import { MenuItem } from '../Menu';
 import { DefinitionTooltip } from '../Tooltip';
 import { AspectRatio } from '../AspectRatio';
-import { createOverflowHandler } from '@carbon/utilities';
+import { createOverflowHandler } from '../../../../utilities/es/overflowHandler';
 import { OperationalTag, Tag } from '../Tag';
 import { TYPES } from '../Tag/Tag';
 import useOverflowItems from '../../internal/useOverflowItems';
@@ -40,6 +40,9 @@ import Breadcrumb from '../Breadcrumb';
 import BreadcrumbItem, {
   BreadcrumbItemProps,
 } from '../Breadcrumb/BreadcrumbItem';
+import { useResizeObserver } from '../../internal/useResizeObserver';
+import OverflowMenu from '../OverflowMenu';
+import OverflowMenuItem from '../OverflowMenuItem';
 
 /**
  * ----------
@@ -306,6 +309,9 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
 ) {
   const { titleClipped } = usePageHeader();
   const prefix = usePrefix();
+  const [hiddenBreadcrumbs, setHiddenBreadcrumbs] = React.useState<
+    HTMLElement[]
+  >([]);
   const classNames = classnames(
     {
       [`${prefix}--page-header__breadcrumb-bar`]: true,
@@ -320,6 +326,31 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
       !contentActionsFlush,
   });
 
+  // Collapsed breadcrumb should always be rendered in DOM, otherwise
+  // the createOverflowHandler has a hard time determining the correct
+  // offsets and what should be visible if this is rendered as hidden
+  // items become available
+  const CollapsedBreadcrumbs = () => (
+    <BreadcrumbItem
+      data-floating-menu-container
+      data-fixed
+      className={classnames(`${prefix}--page-header-overflow-breadcrumb`, {
+        [`${prefix}--page-header-overflow-breadcrumb-with-items`]:
+          hiddenBreadcrumbs.length > 0,
+      })}>
+      <OverflowMenu align="bottom" aria-label="Overflow menu in a breadcrumb">
+        {hiddenBreadcrumbs.map((hiddenBreadcrumb, index) => {
+          return (
+            <OverflowMenuItem
+              key={`${index}__hidden-breadcrumb-menu-item`}
+              itemText={hiddenBreadcrumb.innerText}
+            />
+          );
+        })}
+      </OverflowMenu>
+    </BreadcrumbItem>
+  );
+
   const renderChildren = () => {
     const filteredBreadcrumbs = React.Children.toArray(children).filter(
       (child) => {
@@ -331,27 +362,48 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
     if (filteredBreadcrumbs) {
       const foundBreadcrumb = filteredBreadcrumbs[0];
       if (!React.isValidElement(foundBreadcrumb)) return;
-      const element = renderTitleBreadcrumb?.();
+      const titleBreadcrumb = renderTitleBreadcrumb?.();
 
       // If there isn't a title breadcrumb stop here
-      // and just return the children
-      if (!element) {
-        return children;
+      // and just return the children with the overflow
+      // menu breadcrumb
+      if (!titleBreadcrumb) {
+        const finalBreadcrumbs = React.cloneElement(foundBreadcrumb, {}, [
+          ...(foundBreadcrumb as React.ReactElement<any>).props.children.flat(),
+          // Collapsed breadcrumbs should always be in the second to last position
+          <CollapsedBreadcrumbs
+            key={`${prefix}--page-header-collapsed-bc-menu-items`}
+          />,
+        ]);
+        return finalBreadcrumbs;
       }
 
-      const clonedElement = React.cloneElement(element, {
-        className: classnames(`${prefix}--page-header-title-breadcrumb`, {
-          [`${prefix}--page-header-title-breadcrumb-show`]: titleClipped,
-        }),
-        key: 'cloned title breadcrumb',
-        ...(element.type === BreadcrumbItem && { isCurrentPage: true }),
-      });
-      const finalBreadcrumbs = React.cloneElement(
-        foundBreadcrumb,
-        {},
-        // @ts-expect-error Revisit
-        [...foundBreadcrumb.props.children.flat(), clonedElement]
+      interface titleBreadcrumbItemProps extends BreadcrumbItemProps {
+        'data-fixed'?: boolean;
+      }
+
+      const clonedTitleBreadcrumb = React.cloneElement(
+        titleBreadcrumb as React.ReactElement<titleBreadcrumbItemProps>,
+        {
+          className: classnames(`${prefix}--page-header-title-breadcrumb`, {
+            [`${prefix}--page-header-title-breadcrumb-show`]: titleClipped,
+            [`${prefix}--page-header-title-breadcrumb-no-hidden-items`]:
+              !hiddenBreadcrumbs.length,
+          }),
+          key: 'cloned title breadcrumb',
+          ...(titleBreadcrumb.type === BreadcrumbItem && {
+            isCurrentPage: true,
+          }),
+          'data-fixed': true,
+        }
       );
+      const finalBreadcrumbs = React.cloneElement(foundBreadcrumb, {}, [
+        ...(foundBreadcrumb as React.ReactElement<any>).props.children.flat(),
+        <CollapsedBreadcrumbs
+          key={`${prefix}--page-header-collapsed-bc-menu-items`}
+        />, // Collapsed breadcrumbs should always be in the second to last position
+        clonedTitleBreadcrumb,
+      ]);
       const foundBreadcrumbIndex = React.Children.toArray(children).findIndex(
         (child) => {
           if (React.isValidElement(child)) {
@@ -367,12 +419,33 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
     return children;
   };
 
+  const breadcrumbResizeRef = React.useRef<HTMLDivElement | null>(null);
+  useResizeObserver({
+    ref: breadcrumbResizeRef,
+    onResize: () => {
+      if (!breadcrumbResizeRef?.current) return;
+      const breadcrumbList = breadcrumbResizeRef?.current.querySelector(
+        `.${prefix}--breadcrumb`
+      ) as HTMLOListElement;
+      createOverflowHandler({
+        container: breadcrumbList,
+        onChange: (visible, hidden) => {
+          setHiddenBreadcrumbs(hidden);
+        },
+        dimension: 'width',
+        maxVisibleItems: undefined,
+      });
+    },
+  });
+
   return (
     <div className={classNames} ref={ref} {...other}>
       <Grid>
         <Column lg={16} md={8} sm={4}>
           <div className={`${prefix}--page-header__breadcrumb-container`}>
-            <div className={`${prefix}--page-header__breadcrumb-wrapper`}>
+            <div
+              ref={breadcrumbResizeRef}
+              className={`${prefix}--page-header__breadcrumb-wrapper`}>
               {IconElement && (
                 <div className={`${prefix}--page-header__breadcrumb__icon`}>
                   <IconElement />
@@ -937,7 +1010,10 @@ const PageHeaderTabBar = React.forwardRef<
     <div className={classNames} ref={ref} {...other}>
       <Grid>
         <Column lg={16} md={8} sm={4}>
-          <div className={`${prefix}--page-header__tab-bar--tablist`}>
+          <div
+            className={classnames(`${prefix}--page-header__tab-bar--tablist`, {
+              [`${prefix}--page-header__tab-bar--with-scroller`]: !!scroller,
+            })}>
             {children}
             {tags.length > 0 && renderTags()}
             {renderScroller()}

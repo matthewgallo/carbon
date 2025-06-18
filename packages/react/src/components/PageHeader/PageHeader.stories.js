@@ -537,9 +537,7 @@ export const CollapseAndExpand = (args) => {
             contentActionsFlush={args.contentActionsFlush}
             renderIcon={args.renderBreadcrumbIcon ? BreadcrumbBeeIcon : null}
             renderTitleBreadcrumb={() => (
-              <BreadcrumbItem href="#">
-                Virtual-Machine-DAL-really-long-title-example-that-goes-at-least-2-lines-long
-              </BreadcrumbItem>
+              <BreadcrumbItem href="#">Virtual-Machine-DAL</BreadcrumbItem>
             )}
             pageActions={breadcrumbPageActions}>
             <Breadcrumb>
