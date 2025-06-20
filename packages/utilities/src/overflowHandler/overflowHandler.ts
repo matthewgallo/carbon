@@ -69,6 +69,7 @@ export interface UpdateOverflowHandlerOptions {
   onChange: (visibleItems: HTMLElement[], hiddenItems: HTMLElement[]) => void;
   /** An array of previously hidden items to compare against the new hidden items. */
   previousHiddenItems?: HTMLElement[];
+  offsetValue?: number;
 }
 
 /**
@@ -88,6 +89,7 @@ export function updateOverflowHandler({
   dimension,
   onChange,
   previousHiddenItems = [],
+  offsetValue = 0,
 }: UpdateOverflowHandlerOptions): HTMLElement[] {
   const containerSize =
     dimension === 'width' ? container.clientWidth : container.clientHeight;
@@ -98,13 +100,13 @@ export function updateOverflowHandler({
   const totalSize = sizes.reduce((sum, size) => sum + size, 0);
   const totalFixedSize = fixedSizes.reduce((sum, size) => sum + size, 0);
 
-  if (totalSize + totalFixedSize <= containerSize - offsetSize) {
+  if (totalSize + totalFixedSize <= containerSize) {
     visibleItems = maxVisibleItems
       ? items.slice(0, maxVisibleItems)
       : [...items];
     hiddenItems = maxVisibleItems ? items.slice(maxVisibleItems) : [];
   } else {
-    const available = containerSize - offsetSize - totalFixedSize;
+    const available = containerSize - offsetSize - totalFixedSize - offsetValue;
     let accumulated = 0;
     let breakIndex = items.length;
 
@@ -112,7 +114,6 @@ export function updateOverflowHandler({
       const size = sizes[i];
       if (
         accumulated + size <= available &&
-        accumulated + size + totalFixedSize <= available &&
         (!maxVisibleItems || visibleItems.length < maxVisibleItems)
       ) {
         visibleItems.push(items[i]);
@@ -164,6 +165,7 @@ export interface OverflowHandlerOptions {
    * The dimension to consider for overflow calculations. Defaults to 'width'.
    */
   dimension?: 'width' | 'height';
+  offsetValue?: number;
 }
 
 /**
@@ -181,6 +183,7 @@ export function createOverflowHandler({
   maxVisibleItems,
   onChange,
   dimension = 'width',
+  offsetValue = 0,
 }: OverflowHandlerOptions): OverflowHandler {
   // Error handling
   if (!(container instanceof HTMLElement)) {
@@ -225,6 +228,7 @@ export function createOverflowHandler({
       dimension,
       onChange,
       previousHiddenItems,
+      offsetValue,
     });
   }
 

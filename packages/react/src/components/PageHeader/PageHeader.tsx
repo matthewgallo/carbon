@@ -419,6 +419,7 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
     return children;
   };
 
+  const breadcrumbActionsRef = React.useRef<HTMLDivElement | null>(null);
   const breadcrumbResizeRef = React.useRef<HTMLDivElement | null>(null);
   useResizeObserver({
     ref: breadcrumbResizeRef,
@@ -429,11 +430,12 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
       ) as HTMLOListElement;
       createOverflowHandler({
         container: breadcrumbList,
+        maxVisibleItems: breadcrumbList.children.length - 1,
         onChange: (visible, hidden) => {
           setHiddenBreadcrumbs(hidden);
         },
         dimension: 'width',
-        maxVisibleItems: undefined,
+        offsetValue: 32 + (breadcrumbActionsRef?.current?.offsetWidth ?? 0), // width of breadcrumb__actions, have to account for actions otherwise we'll get horizontal scroll
       });
     },
   });
@@ -453,10 +455,14 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
               )}
               {renderChildren()}
             </div>
-            <div className={`${prefix}--page-header__breadcrumb__actions`}>
-              <div className={contentActionsClasses}>{contentActions}</div>
-              {pageActions}
-            </div>
+            {(pageActions || contentActions) && (
+              <div
+                ref={breadcrumbActionsRef}
+                className={`${prefix}--page-header__breadcrumb__actions`}>
+                <div className={contentActionsClasses}>{contentActions}</div>
+                {pageActions}
+              </div>
+            )}
           </div>
         </Column>
       </Grid>
