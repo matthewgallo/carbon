@@ -330,26 +330,37 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
   // the createOverflowHandler has a hard time determining the correct
   // offsets and what should be visible if this is rendered as hidden
   // items become available
-  const CollapsedBreadcrumbs = () => (
-    <BreadcrumbItem
-      data-floating-menu-container
-      data-fixed
-      className={classnames(`${prefix}--page-header-overflow-breadcrumb`, {
-        [`${prefix}--page-header-overflow-breadcrumb-with-items`]:
-          hiddenBreadcrumbs.length > 0,
-      })}>
-      <OverflowMenu align="bottom" aria-label="Overflow menu in a breadcrumb">
-        {hiddenBreadcrumbs.map((hiddenBreadcrumb, index) => {
-          return (
-            <OverflowMenuItem
-              key={`${index}__hidden-breadcrumb-menu-item`}
-              itemText={hiddenBreadcrumb.innerText}
-            />
-          );
-        })}
-      </OverflowMenu>
-    </BreadcrumbItem>
-  );
+  const CollapsedBreadcrumbs = () => {
+    return (
+      <>
+        {hiddenBreadcrumbs.length > 0 && (
+          <BreadcrumbItem
+            data-floating-menu-container
+            data-fixed
+            className={classnames(
+              `${prefix}--page-header-overflow-breadcrumb`,
+              {
+                [`${prefix}--page-header-overflow-breadcrumb-with-items`]:
+                  hiddenBreadcrumbs.length > 0,
+              }
+            )}>
+            <OverflowMenu
+              align="bottom"
+              aria-label="Overflow menu in a breadcrumb">
+              {hiddenBreadcrumbs.map((hiddenBreadcrumb, index) => {
+                return (
+                  <OverflowMenuItem
+                    key={`${index}__hidden-breadcrumb-menu-item`}
+                    itemText={hiddenBreadcrumb.innerText}
+                  />
+                );
+              })}
+            </OverflowMenu>
+          </BreadcrumbItem>
+        )}
+      </>
+    );
+  };
 
   const renderChildren = () => {
     const filteredBreadcrumbs = React.Children.toArray(children).filter(
@@ -435,7 +446,7 @@ const PageHeaderBreadcrumbBar = React.forwardRef<
           setHiddenBreadcrumbs(hidden);
         },
         dimension: 'width',
-        offsetValue: 32 + (breadcrumbActionsRef?.current?.offsetWidth ?? 0), // width of breadcrumb__actions, have to account for actions otherwise we'll get horizontal scroll
+        offsetValue: breadcrumbActionsRef?.current?.offsetWidth ?? 0, // width of breadcrumb__actions, have to account for actions otherwise we'll get horizontal scroll
       });
     },
   });

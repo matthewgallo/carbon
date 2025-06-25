@@ -74,6 +74,7 @@
   }
 
   .#{$prefix}--page-header__breadcrumb-wrapper {
+    position: relative;
     display: inline-flex;
     inline-size: 100%;
 
@@ -83,9 +84,9 @@
     .#{$prefix}--breadcrumb {
       display: flex;
     }
-    .#{$prefix}--page-header-overflow-breadcrumb {
-      opacity: 0;
-    }
+    // .#{$prefix}--page-header-overflow-breadcrumb {
+    //   opacity: 0;
+    // }
     .#{$prefix}--page-header-overflow-breadcrumb-with-items {
       opacity: 1;
     }
@@ -253,6 +254,12 @@
     inset-inline-end: 0;
   }
 
+  .#{$prefix}--page-header--breadcrumb-sizer {
+    position: absolute;
+    inline-size: 100%;
+    visibility: hidden;
+  }
+
   @keyframes page-header-title-breadcrumb-animation {
     0% {
       opacity: 0;
@@ -290,10 +297,10 @@
     transition:
       transform motion(standard, productive) $duration-moderate-01,
       opacity motion(standard, productive) $duration-moderate-01;
-    &.#{$prefix}--page-header-title-breadcrumb-no-hidden-items {
-      position: relative;
-      inset-inline-start: calc(-1 * ($spacing-07 + $spacing-02));
-    }
+    // &.#{$prefix}--page-header-title-breadcrumb-no-hidden-items {
+    // position: relative;
+    // inset-inline-start: calc(-1 * ($spacing-07 + $spacing-02));
+    // }
     // Target browsers that do not yet support animation-timeline: scroll()
     @supports not (animation-timeline: scroll()) {
       &.#{$prefix}--page-header-title-breadcrumb-show {
